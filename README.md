@@ -1,18 +1,11 @@
 # CodeCrafter macOS Finder
 
-__CodeCrafter macOS Finder v0.1.0__
+__CodeCrafter macOS Finder v2__
 
-__README.md__
-
-__从macOS Sonoma上制作__
-
-* 如何使用？
-
-> python3 main.py
-
-* CodeCrafter macOS Finder由什么组成？
-
-> tkinter 制作，主要控件：Canvas
+### 新的macOS Finder主要包括：
+> 图片缩略图
+> 音乐播放
+> 侧边栏
 
 [本网站](https://github.com/CodeCrafter-TL/CodeCrafter-macOS-Finder)
 
