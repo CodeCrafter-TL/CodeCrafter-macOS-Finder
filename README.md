@@ -2,7 +2,7 @@
 
 __CodeCrafter macOS Finder v2__
 
-### 新的macOS Finder主要包括：
+## 新的macOS Finder主要包括：
 
 > 图片缩略图
 > 
@@ -27,7 +27,10 @@ __CodeCrafter macOS Finder v2__
 - 内建播放器播放音频时，卡死主线程的问题
 - 启动时重复绘制图标的问题
 
+## 其他
+
 [本网站](https://github.com/CodeCrafter-TL/CodeCrafter-macOS-Finder)
 
-#### Copyright 2022~2023 CodeCrafter Studio.
-#### All rights Reserved.
+**Copyright 2022~2023 CodeCrafter Studio.**
+
+**All rights Reserved.**
