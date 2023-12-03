@@ -30,9 +30,9 @@ class Finder:
         self.thumbnail_size = (100, 100)
         self.thumbnail_photos = []
 
-        self.folder_icon = self.get_image("Folder.png", 100, 100)
-        self.file_icon = self.get_image("File.png", 100, 100)
-        self.music_icon = self.get_image("music.png", 100, 100)
+        self.folder_icon = self.get_image("icons/FOLDER.png", 100, 100)
+        self.file_icon = self.get_image("icons/FILE.png", 100, 100)
+        self.music_icon = self.get_image("icons/MUSIC.png", 100, 100)
 
         self.root.resizable(False, False)
 
@@ -58,15 +58,7 @@ class Finder:
 
     def load_icons(self):
         #self.folder_icon = self.get_image("Folder.png", 100, 100)
-        self.display_files_and_folders()
-
-    def launch_play_music(fpath):
-        global play_in_finder
-        if play_in_finder:
-            play_t=threading.Thread(target=lambda:play_music(fpath))
-            play_t.start()
-        else:
-            open_file(fpath)
+        self.display_files_and_folders(path)
     
     def play_music(self, music_file):
         mixer.init()
@@ -78,12 +70,15 @@ class Finder:
         im = Image.open(image_path).resize((width, height))
         return ImageTk.PhotoImage(im)
 
-    def display_files_and_folders(self):
-        current_path = path
+    def display_files_and_folders(self, folder_path):
+        self.canvas.delete("all")
+        current_path = folder_path  # 更新当前路径为文件夹路径
         x_offset = 210
         y_offset = 20
         max_width = self.root.winfo_width() - 150
         item_count = 0
+        os.chdir(current_path)
+        current_path = os.getcwd()
         for item in os.listdir(current_path):
             item_path = os.path.join(current_path, item)
             if os.path.isfile(item_path):
@@ -93,7 +88,7 @@ class Finder:
                     self.thumbnail_photos.append(thumbnail_photo)
                     file_image = self.canvas.create_image(x_offset, y_offset, image=self.thumbnail_photos[-1], anchor='nw')
                     db_click = True
-                elif item_path.lower().endswith(('.mp3', '.wav', '.ogg', '.m4a')) and play_in_finder:  # 添加对音乐文件的处理
+                elif item_path.lower().endswith(('.mp3', '.wav', '.ogg', '.m4a')) and play_in_finder:
                     file_image = self.canvas.create_image(x_offset, y_offset, image=self.music_icon, anchor='nw')
                     file_text = self.canvas.create_text(x_offset + 50, y_offset + 120, text=item, anchor='center', width=100)
                     self.make_draggable(file_image, file_text)
@@ -130,8 +125,8 @@ class Finder:
                 folder_image = self.canvas.create_image(x_offset, y_offset, image=self.folder_icon, anchor='nw')
                 folder_text = self.canvas.create_text(x_offset + 50, y_offset + 120, text=item, anchor='center', width=100)
                 self.make_draggable(folder_image, folder_text)
-                self.canvas.tag_bind(folder_image, '<Double-Button-1>', lambda event, path=item_path: self.display_folder_contents(path))
-                self.canvas.tag_bind(folder_text, '<Double-Button-1>', lambda event, path=item_path: self.display_folder_contents(path))
+                self.canvas.tag_bind(folder_image, '<Double-Button-1>', lambda event, path=item_path: self.display_files_and_folders(path))
+                self.canvas.tag_bind(folder_text, '<Double-Button-1>', lambda event, path=item_path: self.display_files_and_folders(path))
                 item_count += 1
                 if item_count == 4:
                     item_count = 0
@@ -147,80 +142,13 @@ class Finder:
         current_path = os.getcwd()
         parent_path = os.path.abspath(os.path.join(current_path, os.pardir))
         os.chdir(parent_path)
-        self.display_folder_contents(parent_path)
+        self.display_files_and_folders(parent_path)
 
     def open_file(self, file_path):
         if os.name == 'nt':
             os.startfile(file_path)
         else:
             subprocess.call(['open', file_path])
-
-    def display_folder_contents(self, folder_path):
-        self.canvas.config(scrollregion=self.canvas.bbox("all"))
-        self.canvas.delete("all")
-        x_offset = 210
-        y_offset = 20
-        max_width = self.root.winfo_width() - 150
-        item_count = 0
-        os.chdir(folder_path)
-        for item in os.listdir(folder_path):
-            item_path = os.path.join(folder_path, item)
-            if os.path.isfile(item_path):
-                if item_path.lower().endswith(('.png', '.jpg', '.jpeg', '.gif')):
-                    thumbnail_image = Image.open(item_path).resize(self.thumbnail_size)
-                    thumbnail_photo = ImageTk.PhotoImage(thumbnail_image)
-                    self.thumbnail_photos.append(thumbnail_photo)
-                    file_image = self.canvas.create_image(x_offset, y_offset, image=self.thumbnail_photos[-1], anchor='nw')
-                    db_click = True
-                elif item_path.lower().endswith(('.mp3', '.wav', '.ogg', '.m4a')):  # 添加对音乐文件的处理
-                    file_image = self.canvas.create_image(x_offset, y_offset, image=self.music_icon, anchor='nw')
-                    file_text = self.canvas.create_text(x_offset + 50, y_offset + 120, text=item, anchor='center', width=100)
-                    self.make_draggable(file_image, file_text)
-                    db_click = False
-                elif os.path.exists(os.path.split(__file__)[0]+"/icons/"+item_path.upper().split('.')[len(item_path.lower().split('.'))-1]+'.png'): #用户自定义图标
-                    img=Image.open(os.path.split(__file__)[0]+"/icons/"+item_path.upper().split('.')[len(item_path.lower().split('.'))-1]+'.png').resize(self.thumbnail_size)
-                    tkicon=ImageTk.PhotoImage(img)
-                    self.thumbnail_photos.append(tkicon)
-                    file_image = self.canvas.create_image(x_offset, y_offset, image=tkicon, anchor='nw')
-                    file_text = self.canvas.create_text(x_offset + 50, y_offset + 120, text=item, anchor='center', width=100)
-                    db_click=True
-                else:
-                    # 使用file_icon
-                    print('Icon for file type '+item_path.upper().split('.')[len(item_path.lower().split('.'))-1]+' not found. Using defult icon')
-                    print(os.path.split(__file__)[0]+"/icons/"+item_path.upper().split('.')[len(item_path.lower().split('.'))-1]+'.png')
-                    file_image = self.canvas.create_image(x_offset, y_offset, image=self.file_icon, anchor='nw')
-                    db_click = True
-                file_text = self.canvas.create_text(x_offset + 50, y_offset + 120, text=item, anchor='center', width=100)
-                self.make_draggable(file_image, file_text)
-                if db_click:
-                    self.canvas.tag_bind(file_image, '<Double-Button-1>', lambda event, path=item_path: self.open_file(path))
-                    self.canvas.tag_bind(file_text, '<Double-Button-1>', lambda event, path=item_path: self.open_file(path))
-                else: # 播放音乐
-                    self.canvas.tag_bind(file_image, '<Double-Button-1>', lambda event, path=item_path: self.play_music(path))
-                    self.canvas.tag_bind(file_text, '<Double-Button-1>', lambda event, path=item_path: self.play_music(path))
-                item_count += 1
-                if item_count == 4:
-                    item_count = 0
-                    x_offset = 210
-                    y_offset += 150
-                else:
-                    x_offset += 150
-            elif os.path.isdir(item_path):
-                folder_image = self.canvas.create_image(x_offset, y_offset, image=self.folder_icon, anchor='nw')
-                folder_text = self.canvas.create_text(x_offset + 50, y_offset + 120, text=item, anchor='center', width=100)
-                self.make_draggable(folder_image, folder_text)
-                self.canvas.tag_bind(folder_image, '<Double-Button-1>', lambda event, path=item_path: self.display_folder_contents(path))
-                self.canvas.tag_bind(folder_text, '<Double-Button-1>', lambda event, path=item_path: self.display_folder_contents(path))
-                item_count += 1
-                if item_count == 4:
-                    item_count = 0
-                    x_offset = 210
-                    y_offset += 150
-                else:
-                    x_offset += 150
-
-            self.canvas.update_idletasks()
-            self.canvas.config(scrollregion=self.canvas.bbox("all"))
 
     def on_canvas_configure(self, event):
         self.canvas.config(width=event.width, height=event.height)
@@ -242,6 +170,15 @@ class Finder:
         self.canvas.move(text_id, delta_x, delta_y)
         self._drag_data['x'] = event.x
         self._drag_data['y'] = event.y
+
+    def launch_play_music(fpath):
+        global play_in_finder
+        match play_in_finder:
+            case True:
+                play_t=threading.Thread(target=lambda:play_music(fpath))
+                play_t.start()
+            case el:
+                open_file(fpath)
 
 root = Tk()
 finder = Finder(root)
