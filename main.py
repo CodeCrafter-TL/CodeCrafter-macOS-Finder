@@ -1,10 +1,15 @@
 # -*- coding: utf-8 -*-
+
+play_in_finder=True
+
 import os
 from tkinter import *
 from PIL import Image, ImageTk
 import tkintertools as tkt
 import subprocess
-from pygame import mixer
+if play_in_finder:
+    from pygame import mixer
+    import threading
 
 if os.name == 'nt': path = 'C:\\'
 else: path = '/'
@@ -32,15 +37,16 @@ class Finder:
         self.root.resizable(False, False)
 
         self.canvas_frame = Frame(self.root)
-        self.canvas_frame.pack(fill=BOTH, expand=True)
         self.canvas_scrollbar = Scrollbar(self.canvas_frame, orient=VERTICAL)
         self.canvas_scrollbar.pack(side=RIGHT, fill=Y)
 
         self.lefttool = Frame(self.root, width=200, height=400)
-        # self.lefttool.place(x=0, y=0, width=200, height=400)
+        self.lefttool.pack(side=LEFT,fill=Y,expand=True)
 
-        self.return_tool = Button(self.lefttool, relief=FLAT, text='<', command=self.return_folder)
-        self.return_tool.place(x=0, y=0, width=20, height=20)
+        self.canvas_frame.pack(fill=BOTH, expand=True)
+
+        self.return_tool = Button(self.lefttool, relief=FLAT, text='↑ 上层目录', command=self.return_folder)
+        self.return_tool.place(x=0, y=0, width=60, height=20)
 
         self.canvas = Canvas(self.canvas_frame, bg="white", yscrollcommand=self.canvas_scrollbar.set, height=400, width=600)
         self.canvas.pack(fill=BOTH, expand=True)
@@ -51,8 +57,16 @@ class Finder:
         self.canvas.bind("<Configure>", self.on_canvas_configure)
 
     def load_icons(self):
-        self.folder_icon = self.get_image("Folder.png", 100, 100)
+        #self.folder_icon = self.get_image("Folder.png", 100, 100)
         self.display_files_and_folders()
+
+    def launch_play_music(fpath):
+        global play_in_finder
+        if play_in_finder:
+            play_t=threading.Thread(target=lambda:play_music(fpath))
+            play_t.start()
+        else:
+            open_file(fpath)
     
     def play_music(self, music_file):
         mixer.init()
@@ -73,29 +87,38 @@ class Finder:
         for item in os.listdir(current_path):
             item_path = os.path.join(current_path, item)
             if os.path.isfile(item_path):
-                if item_path.lower().endswith(('.png', '.jpg', '.jpeg', '.gif', '.icns', '.ico')):
+                if item_path.lower().endswith(('.png', '.jpg', '.jpeg', '.gif')):
                     thumbnail_image = Image.open(item_path).resize(self.thumbnail_size)
                     thumbnail_photo = ImageTk.PhotoImage(thumbnail_image)
                     self.thumbnail_photos.append(thumbnail_photo)
                     file_image = self.canvas.create_image(x_offset, y_offset, image=self.thumbnail_photos[-1], anchor='nw')
                     db_click = True
-                elif item_path.lower().endswith(('.mp3', '.wav', '.ogg', '.m4a')):  # 添加对音乐文件的处理
+                elif item_path.lower().endswith(('.mp3', '.wav', '.ogg', '.m4a')) and play_in_finder:  # 添加对音乐文件的处理
                     file_image = self.canvas.create_image(x_offset, y_offset, image=self.music_icon, anchor='nw')
                     file_text = self.canvas.create_text(x_offset + 50, y_offset + 120, text=item, anchor='center', width=100)
                     self.make_draggable(file_image, file_text)
                     db_click = False
+                elif os.path.exists(os.path.split(__file__)[0]+"/icons/"+item_path.upper().split('.')[len(item_path.lower().split('.'))-1]+'.png'): #用户自定义图标
+                    img=Image.open(os.path.split(__file__)[0]+"/icons/"+item_path.upper().split('.')[len(item_path.lower().split('.'))-1]+'.png').resize(self.thumbnail_size)
+                    tkicon=ImageTk.PhotoImage(img)
+                    self.thumbnail_photos.append(tkicon)
+                    file_image = self.canvas.create_image(x_offset, y_offset, image=tkicon, anchor='nw')
+                    file_text = self.canvas.create_text(x_offset + 50, y_offset + 120, text=item, anchor='center', width=100)
+                    db_click=True
                 else:
                     # 使用file_icon
+                    print('Icon for file type '+item_path.upper().split('.')[len(item_path.lower().split('.'))-1]+' not found. Using defult icon')
+                    print(os.path.split(__file__)[0]+"/icons/"+item_path.upper().split('.')[len(item_path.lower().split('.'))-1]+'.png')
                     file_image = self.canvas.create_image(x_offset, y_offset, image=self.file_icon, anchor='nw')
                     db_click = True
-                    file_text = self.canvas.create_text(x_offset + 50, y_offset + 120, text=item, anchor='center', width=100)
+                file_text = self.canvas.create_text(x_offset + 50, y_offset + 120, text=item, anchor='center', width=100)
                 self.make_draggable(file_image, file_text)
                 if db_click:
                     self.canvas.tag_bind(file_image, '<Double-Button-1>', lambda event, path=item_path: self.open_file(path))
                     self.canvas.tag_bind(file_text, '<Double-Button-1>', lambda event, path=item_path: self.open_file(path))
                 else:
-                    self.canvas.tag_bind(file_image, '<Double-Button-1>', lambda event, path=item_path: self.play_music(path))
-                    self.canvas.tag_bind(file_text, '<Double-Button-1>', lambda event, path=item_path: self.play_music(path))
+                    self.canvas.tag_bind(file_image, '<Double-Button-1>', lambda event, path=item_path: self.launch_play_music(path))
+                    self.canvas.tag_bind(file_text, '<Double-Button-1>', lambda event, path=item_path: self.launch_play_music(path))
                 item_count += 1
                 if item_count == 4:
                     item_count = 0
@@ -154,8 +177,17 @@ class Finder:
                     file_text = self.canvas.create_text(x_offset + 50, y_offset + 120, text=item, anchor='center', width=100)
                     self.make_draggable(file_image, file_text)
                     db_click = False
+                elif os.path.exists(os.path.split(__file__)[0]+"/icons/"+item_path.upper().split('.')[len(item_path.lower().split('.'))-1]+'.png'): #用户自定义图标
+                    img=Image.open(os.path.split(__file__)[0]+"/icons/"+item_path.upper().split('.')[len(item_path.lower().split('.'))-1]+'.png').resize(self.thumbnail_size)
+                    tkicon=ImageTk.PhotoImage(img)
+                    self.thumbnail_photos.append(tkicon)
+                    file_image = self.canvas.create_image(x_offset, y_offset, image=tkicon, anchor='nw')
+                    file_text = self.canvas.create_text(x_offset + 50, y_offset + 120, text=item, anchor='center', width=100)
+                    db_click=True
                 else:
                     # 使用file_icon
+                    print('Icon for file type '+item_path.upper().split('.')[len(item_path.lower().split('.'))-1]+' not found. Using defult icon')
+                    print(os.path.split(__file__)[0]+"/icons/"+item_path.upper().split('.')[len(item_path.lower().split('.'))-1]+'.png')
                     file_image = self.canvas.create_image(x_offset, y_offset, image=self.file_icon, anchor='nw')
                     db_click = True
                 file_text = self.canvas.create_text(x_offset + 50, y_offset + 120, text=item, anchor='center', width=100)
