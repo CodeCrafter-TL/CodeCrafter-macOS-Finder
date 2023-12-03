@@ -30,9 +30,9 @@ class Finder:
         self.thumbnail_size = (100, 100)
         self.thumbnail_photos = []
 
-        self.folder_icon = self.get_image("icons/FOLDER.png", 100, 100)
-        self.file_icon = self.get_image("icons/FILE.png", 100, 100)
-        self.music_icon = self.get_image("icons/MUSIC.png", 100, 100)
+        self.folder_icon = self.get_image("folder.png", 100, 100)
+        self.file_icon = self.get_image("file.png", 100, 100)
+        self.music_icon = self.get_image("music.png", 100, 100)
 
         self.root.resizable(False, False)
 
