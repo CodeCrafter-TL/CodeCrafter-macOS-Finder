@@ -99,7 +99,7 @@ class Finder:
     def display_folder_content(self, folder_path):
         self.canvas.config(scrollregion=self.canvas.bbox("all"))
         self.canvas.delete("all")
-        self.thumbnail_photos=[] #及时清空图片缓存，防止成为下一个electron
+        self.thumbnail_photos=[] #及时清空图片缓存，防止成为下一个chromium
         x_offset = 210
         y_offset = 20
         max_width = self.root.winfo_width() - 150
@@ -196,6 +196,14 @@ class Finder:
         self.canvas.move(text_id, delta_x, delta_y)
         self._drag_data['x'] = event.x
         self._drag_data['y'] = event.y
+
+    # 参考代码：如果文件或文件家名称过长，将会以省略号缩略显示，比如如果文件名称长度超过10个文字，将会缩略显示
+    # def get_abbreviated_file_name(file_path, max_length=10):
+    #     file_name = os.path.basename(file_path)
+    #     if len(file_name) > max_length:
+    #         return file_name[:max_length] + "..."
+    #     else:
+    #         return file_name
 
 root = Tk()
 finder = Finder(root)
