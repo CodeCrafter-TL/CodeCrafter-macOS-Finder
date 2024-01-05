@@ -1,0 +1,6 @@
+pillow
+tkintertools
+pygame
+tkinter
+subprocess
+threading
